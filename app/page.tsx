@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import VoiceRecordingClient from "../components/VoiceRecordingClient";
+import ModeSelection from "@/components/ModeSelection";
 
 export const metadata: Metadata = {
-  title: "Voice Recording",
-  description: "Record and upload your voice introduction",
+  title: "Record your intro",
+  description: "Choose whether to introduce yourself by video or audio",
 };
 
-export default function RecordPage() {
-  return <VoiceRecordingClient />;
+export default function HomePage() {
+  return <ModeSelection />;
 }
