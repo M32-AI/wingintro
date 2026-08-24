@@ -54,6 +54,23 @@ export default function RecorderClient({ mode }: { mode: RecordingMode }) {
   }, []);
 
   /**
+   * Detaches the recorder's handlers before stopping it. Ending the stream's
+   * tracks makes MediaRecorder queue `dataavailable` and `stop`, so on unmount
+   * those handlers would otherwise still fire — creating an object URL after
+   * the revoking cleanup has already run, or, on an empty blob, re-acquiring
+   * the camera for a component that no longer exists.
+   */
+  const teardownRecorder = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+    if (recorder.state !== "inactive") recorder.stop();
+    recorderRef.current = null;
+  }, []);
+
+  /**
    * Puts a live stream on `streamRef`, resolving true once it is ready and
    * false when the request was superseded or the devices are unavailable.
    * Owns no React state on purpose: callers update status from the
@@ -93,9 +110,10 @@ export default function RecorderClient({ mode }: { mode: RecordingMode }) {
     });
     return () => {
       cancelPendingRequest();
+      teardownRecorder();
       releaseStream();
     };
-  }, [acquireStream, cancelPendingRequest, releaseStream]);
+  }, [acquireStream, cancelPendingRequest, teardownRecorder, releaseStream]);
 
   // Revoke the last object URL only when the component goes away; swapping
   // recordings revokes the previous URL inline.
