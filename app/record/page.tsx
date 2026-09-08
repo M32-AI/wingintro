@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default async function RecordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string }>;
+  searchParams: Promise<{ mode?: string; token?: string }>;
 }) {
-  const { mode } = await searchParams;
+  const { mode, token } = await searchParams;
   if (!isRecordingMode(mode)) redirect("/");
 
-  return <RecorderClient mode={mode} />;
+  return <RecorderClient mode={mode} token={token} />;
 }
