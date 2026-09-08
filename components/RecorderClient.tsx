@@ -21,7 +21,13 @@ type Status = "preparing" | "ready" | "recording" | "recorded" | "uploading" | "
 
 const WAVEFORM_HEIGHTS = [16, 32, 48, 24, 40, 64, 40, 24, 48, 32, 16, 40, 20, 56, 28, 12];
 
-export default function RecorderClient({ mode }: { mode: RecordingMode }) {
+export default function RecorderClient({
+  mode,
+  token,
+}: {
+  mode: RecordingMode;
+  token?: string | null;
+}) {
   const maxSeconds = MAX_SECONDS[mode];
 
   const [status, setStatus] = useState<Status>("preparing");
@@ -205,7 +211,7 @@ export default function RecorderClient({ mode }: { mode: RecordingMode }) {
     setStatus("uploading");
     try {
       const filename = `intro.${fileExtensionFor(blob.type)}`;
-      const result = await uploadRecording(mode, blob, duration, filename);
+      const result = await uploadRecording(mode, blob, duration, filename, token);
 
       if (!result.success || !result.data?.s3Url) {
         throw new Error(result.message || "Upload failed");

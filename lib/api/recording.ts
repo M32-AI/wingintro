@@ -17,13 +17,18 @@ export async function uploadRecording(
   mode: RecordingMode,
   blob: Blob,
   duration: number,
-  filename: string
+  filename: string,
+  token?: string | null
 ): Promise<RecordingUploadResponse> {
   const { path, field } = ENDPOINTS[mode];
 
   const formData = new FormData();
   formData.append(field, blob, filename);
   formData.append("duration", String(duration));
+  // When the recorder was opened from a recruiter-minted link
+  // (…/record?token=…), forward the token so the API can attach the finished
+  // recording to that candidate. Absent it, this is a stand-alone recording.
+  if (token) formData.append("token", token);
 
   const response = await fetch(`${API_URL}/${path}/upload`, {
     method: "POST",
