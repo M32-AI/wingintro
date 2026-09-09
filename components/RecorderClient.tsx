@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Square, Upload, Copy, CheckCircle, Link2, Loader2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import { uploadRecording } from "@/lib/api/recording";
+import { fetchIntroPrompt, uploadRecording } from "@/lib/api/recording";
 import {
   INTRO_PROMPT,
   INTRO_QUESTION,
@@ -36,6 +36,22 @@ export default function RecorderClient({
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [s3Url, setS3Url] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // What this particular candidate was asked to say, when the recruiter set
+  // something. Null means the generic question below stands.
+  const [customPrompt, setCustomPrompt] = useState<string | null>(null);
+
+  // Read the recruiter's instruction, if the link carries one. Deliberately not
+  // awaited by anything: the recorder is usable the moment the camera is, and a
+  // slow or failed lookup must never hold that up.
+  useEffect(() => {
+    let cancelled = false;
+    fetchIntroPrompt(token).then((p) => {
+      if (!cancelled) setCustomPrompt(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const router = useRouter();
   const streamRef = useRef<MediaStream | null>(null);
@@ -258,10 +274,20 @@ export default function RecorderClient({
             {/* The question being answered */}
             <section className="w-full rounded-2xl border border-indigo-100 bg-white p-6">
               <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">
-                Your question
+                {customPrompt ? "What to cover" : "Your question"}
               </p>
-              <h1 className="mt-2 text-xl font-semibold text-slate-900">{INTRO_QUESTION}</h1>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{INTRO_PROMPT}</p>
+              {customPrompt ? (
+                // whitespace-pre-line: a recruiter pasting a script keeps their
+                // line breaks, which is most of what makes a script readable.
+                <h1 className="mt-2 whitespace-pre-line text-xl font-semibold leading-snug text-slate-900">
+                  {customPrompt}
+                </h1>
+              ) : (
+                <>
+                  <h1 className="mt-2 text-xl font-semibold text-slate-900">{INTRO_QUESTION}</h1>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{INTRO_PROMPT}</p>
+                </>
+              )}
             </section>
 
             <section className="relative w-full overflow-hidden rounded-[32px] bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
